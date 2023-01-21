@@ -1,0 +1,9 @@
+{
+  "num_best_features": 20,
+  "excluded_cols": ["Source Port", "Destination Port", "Protocol"], 
+  "excluded_cols_from_scaling": [], 
+  "cicids_a_full": "../parquet/cicids_2017.parquet", 
+  "cicids_b_full": "../parquet/cicids_2018.parquet", 
+  "cicids_a_subset": "../parquet/inter_dataset/cicids_2017.parquet", 
+  "cicids_b_subset": "../parquet/inter_dataset/cicids_2018.parquet"
+}

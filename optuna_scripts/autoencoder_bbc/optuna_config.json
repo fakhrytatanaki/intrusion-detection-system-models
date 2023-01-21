@@ -1,0 +1,11 @@
+{
+  "dataset_a" : "../../parquet/inter_dataset/cicids_2017.parquet",
+  "dataset_b" : "../../parquet/inter_dataset/cicids_2018.parquet",
+  "study" : {
+    "dir" : "./study/",
+    "db" : "db.sqlite",
+    "best_model" : "best_model",
+    "best_model_cfg" : "best_model.cfg.json",
+    "ctx" : "ctx.json"
+  }
+}

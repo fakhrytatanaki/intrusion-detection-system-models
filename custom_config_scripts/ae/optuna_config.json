@@ -1,0 +1,15 @@
+{
+  "study" : {
+    "dir" : "./study/",
+    "db" : "db.sqlite",
+    "best_model" : "best_model",
+    "best_model_cfg" : "best_model.cfg.json",
+    "ctx" : "ctx.json"
+  },
+
+  "plots" : {
+    "dir" : "plots/",
+    "perf_plots" : "perf/"
+  }
+
+}
