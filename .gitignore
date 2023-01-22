@@ -3,11 +3,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-*/**.parquet
+**.parquet
 optuna_scripts/autoencoder_bbc/study/*
 optuna_scripts/variational_autoencoder_bbc/study/*
 draft/
 **DS_Store
+**.png 
+**.csv
 
 
 # C extensions

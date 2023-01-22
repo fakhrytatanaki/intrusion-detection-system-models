@@ -1,5 +1,5 @@
 {
-  "num_best_features": 20,
+  "num_best_features": 0,
   "excluded_cols": ["Source Port", "Destination Port", "Protocol"], 
   "excluded_cols_from_scaling": [], 
   "cicids_a_full": "../parquet/cicids_2017.parquet", 

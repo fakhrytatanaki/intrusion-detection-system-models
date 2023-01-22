@@ -25,7 +25,7 @@ class OneHotEncoder:
 scalers : dict[str,object]= {
     'Normalisation' : Normalizer,
     'Standardisation' : StandardScaler,
-    'Min/Max' : MinMaxScaler
+    'MinMax' : MinMaxScaler
 }
 
 

@@ -15,6 +15,7 @@ from ids_main.models.autoencoders.autoencoder import Autoencoder
 from ids_main.models.autoencoders.common import reconstruction_error_funcs
 from ids_main.models.BinaryBayesClassifier import BinaryBayesClassifier
 from ids_main.common import train_nn_model,CICIDSAutoencoderModel,CICIDSAutoencoderModelWithBinaryBayesClassifier
+from ids_main.preprocessing import scalers
 
 HELP_SCREEN= """
 Usage : python main.py epochs=[number of epochs] scaler=[scaler name] sub_sample=[number of samples]
@@ -76,9 +77,9 @@ def ae_constructor(num_neurons_per_layer,cfg,ae_class,reg_constants_per_layer=No
 def get_optimized_ae(cfg,ae_class):
 
 
+
     _st = proj_config['study']
     ctx_path = os.path.join(_st['dir'],_st['ctx'])
-    data_config = cfg['data_config']
 
     if os.path.exists(ctx_path):
         with open(ctx_path,'r') as fp:
@@ -92,23 +93,30 @@ def get_optimized_ae(cfg,ae_class):
     dataset_a = proj_config['dataset_a']
     dataset_b = proj_config['dataset_b']
 
-    dataloader_a = CICFlowMeterDataLoader(dataset_a,cfg)
-    dataloader_b = CICFlowMeterDataLoader(dataset_b,cfg) if dataset_b else None
-
-    dataloaders = (dataloader_a,dataloader_b)
+    dataset_paths = (dataset_a,dataset_b)
 
     _objective = lambda trial : objective(
             trial,
             cfg,
             ctx,
-            dataloaders
+            dataset_paths
             )
 
 
-    def objective(trial : optuna.Trial,cfg:dict,ctx:dict,dataloaders : tuple):
+    def objective(trial : optuna.Trial,_cfg,ctx:dict,dataset_paths : tuple):
+
+        cfg = _cfg() 
+
+        scaler_name = cfg['data_config']['feature_scaling']
+        re_func_name = 'Euclidean Distance'
+        cfg['reconstruction_error_func']=re_func_name
+
+        if scaler_name=='auto':
+            scaler_name=trial.suggest_categorical('scaler',scalers.keys())
+            cfg['data_config']['feature_scaling']=scaler_name
 
         print('preparing dataset A')
-        dataloader_a =  dataloaders[0]
+        dataloader_a =  CICFlowMeterDataLoader(dataset_paths[0],cfg)
         x_train, x_test,y_train,y_test = dataloader_a.train_test_split()
 
         data_vec_size = x_train.shape[1]
@@ -118,9 +126,10 @@ def get_optimized_ae(cfg,ae_class):
         num_neurons_last_layer = data_vec_size
         num_neurons_min = trial.suggest_int('num_neurons_min',2,data_vec_size)
 
-        re_func_name = 'Euclidean Distance'
         cfg['latent_vec_size'] = num_neurons_min-1
         cfg['data_vec_size']=data_vec_size
+
+            
 
         num_layers = trial.suggest_int('num_layers',3,60)
 
@@ -134,19 +143,19 @@ def get_optimized_ae(cfg,ae_class):
 
         print(f'trying hidden_neurons:{num_neurons_per_layer},latent_vec_size : {cfg["latent_vec_size"]}')
 
-        cfg['reconstruction_error_func']=re_func_name
 
         ae = ae_constructor(num_neurons_per_layer,cfg,ae_class,reg_constants_per_layer)
         bbc = BinaryBayesClassifier(dist_bins=2000)
         model = CICIDSAutoencoderModelWithBinaryBayesClassifier(ae,cfg,lambda data,model,_:model.fit(data,data,batch_size=128),bbc)
 
         model.fit(x_train,binarize_attack_labels(y_train))
+        folder_name = f"trial_{ctx['trial']}_{scaler_name}_l{num_layers}_v{num_neurons_min-1}"
 
 
 
         print('[Intra-Dataset Test] Primary results ')
         plot_desc=f"CICIDS Reconstruction Error Distribution\n Decoder : {data_vec_size} -> {num_neurons_per_layer} -> {num_neurons_min-1}"
-        intra_dataset_eval = AutoencoderEvaluation(model,x_test,y_test,res_dir=f"study/intra_dataset/trial_{ctx['trial']}")
+        intra_dataset_eval = AutoencoderEvaluation(model,x_test,y_test,res_dir=f"study/intra_dataset/{folder_name}")
         intra_dataset_eval.calculate_ae_outputs(plot_desc=plot_desc) 
         intra_dataset_eval.evaluate_bayesian_inference()
         r = intra_dataset_eval.evaluate_auroc()
@@ -157,11 +166,11 @@ def get_optimized_ae(cfg,ae_class):
 
         if res > ctx['best']:
 
-            dataloader_b =  dataloaders[1]
-            if dataloader_b:
+            if dataset_paths[1]:
                 print('[Inter-Dataset Test]')
+                dataloader_b =  CICFlowMeterDataLoader(dataset_paths[1],cfg)
                 _, x_test,_,y_test = dataloader_b.train_test_split(0.5)
-                inter_dataset_eval = AutoencoderEvaluation(model,x_test,y_test,res_dir=f"study/inter_dataset/trial_{ctx['trial']}")
+                inter_dataset_eval = AutoencoderEvaluation(model,x_test,y_test,res_dir=f"study/inter_dataset/{folder_name}")
                 inter_dataset_eval.calculate_ae_outputs() 
                 inter_dataset_eval.evaluate_bayesian_inference()
                 inter_dataset_eval.evaluate_auroc()
@@ -220,7 +229,7 @@ if __name__=='__main__':
     default_args = {
            'epochs' : 20,
            'sub_sample' : 0,
-           'scaler' : 'Min/Max',
+           'scaler' : 'auto',
            }
 
     args = sys.argv
@@ -235,7 +244,7 @@ if __name__=='__main__':
         default_args[key]=value_type(value)
 
 
-    autoencoder_config = {
+    autoencoder_config = lambda : {
 
         'epochs' : default_args['epochs'],
         'sub_sample' : {
