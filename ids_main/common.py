@@ -71,7 +71,7 @@ class CICIDSAutoencoderModel:
         self.threshold_value = threshold_value
 
     def calculate_reconstruction_error(self,x):
-        x_rec = self.autoencoder.predict(x,batch_size=655536)
+        x_rec = self.autoencoder.predict(x,batch_size=16384)
         self.reconstruction_errors = self.rcf(x,x_rec) 
 
 

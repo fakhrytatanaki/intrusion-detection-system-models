@@ -302,11 +302,18 @@ class CICFlowMeterDataLoader:
             self.data_size = self.df.compute().shape[0]
             self.scaler=existing_scaler
 
-        def train_test_split(self,train_size=0.8):
+        def train_test_split(self,train_size=0.8,smote=False):
             x = self.df.drop(columns=['Label']).values.compute()
             y = self.df.compute().Label.values
+
+
+
             x_train,x_test,y_train,y_test = train_test_split(x,y,train_size=train_size)
 
+            if smote:
+                print("performing SMOTE sampling technique on trainig data")
+                smoter = SMOTE()
+                x_train,y_train = smoter.fit_resample(x_train,y_train)
 
             if not self.scaler:
                 self.scaler = scalers[self.scaler_name]()
