@@ -1,6 +1,6 @@
 {
   "dataset_a" : "../../parquet/inter_dataset/cicids_2017.parquet",
-  "dataset_b" : "",
+  "dataset_b" : "../../parquet/inter_dataset/cicids_2018.parquet",
   "study" : {
     "dir" : "./study/",
     "db" : "db.sqlite",

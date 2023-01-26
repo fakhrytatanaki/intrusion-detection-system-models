@@ -167,7 +167,7 @@ class AutoencoderEvaluation:
         """
         self.model.calculate_reconstruction_error(self.x_test)
         self.value_bounds = (np.quantile(self.model.reconstruction_errors,self.quantile_bounds[0]), np.quantile(self.model.reconstruction_errors,self.quantile_bounds[1]))
-        self.plot_bounds = (self.value_bounds[0] - G_PLOT_MARGIN,self.value_bounds[1] + G_PLOT_MARGIN)
+        self.plot_bounds = (self.value_bounds[0] - 1,self.value_bounds[1] + 1)
                             
 
         dists = {
@@ -309,6 +309,7 @@ class CICFlowMeterDataLoader:
 
 
             x_train,x_test,y_train,y_test = train_test_split(x,y,train_size=train_size)
+            y_train = binarize_attack_labels(y_train)
 
             if smote:
                 print("performing SMOTE sampling technique on trainig data")

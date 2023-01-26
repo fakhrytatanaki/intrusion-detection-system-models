@@ -117,7 +117,7 @@ def get_optimized_ae(cfg,ae_class):
 
         print('preparing dataset A')
         dataloader_a =  CICFlowMeterDataLoader(dataset_paths[0],cfg)
-        x_train, x_test,y_train,y_test = dataloader_a.train_test_split()
+        x_train, x_test,y_train,y_test = dataloader_a.train_test_split(train_size=0.5,smote=True)
 
         data_vec_size = x_train.shape[1]
 
@@ -146,9 +146,9 @@ def get_optimized_ae(cfg,ae_class):
 
         ae = ae_constructor(num_neurons_per_layer,cfg,ae_class,reg_constants_per_layer)
         bbc = BinaryBayesClassifier(dist_bins=2000)
-        model = CICIDSAutoencoderModelWithBinaryBayesClassifier(ae,cfg,lambda data,model,_:model.fit(data,data,batch_size=128),bbc)
+        model = CICIDSAutoencoderModelWithBinaryBayesClassifier(ae,cfg,lambda data,model,_:model.fit(data,data,batch_size=8192),bbc)
 
-        model.fit(x_train,binarize_attack_labels(y_train))
+        model.fit(x_train,y_train)
         folder_name = f"trial_{ctx['trial']}_{scaler_name}_l{num_layers}_v{num_neurons_min-1}"
 
 
@@ -165,15 +165,17 @@ def get_optimized_ae(cfg,ae_class):
         res = r
 
         if res > ctx['best']:
-
             if dataset_paths[1]:
                 print('[Inter-Dataset Test]')
                 dataloader_b =  CICFlowMeterDataLoader(dataset_paths[1],cfg)
+                dataloader_b.scaler = dataloader_a.scaler
                 _, x_test,_,y_test = dataloader_b.train_test_split(0.5)
                 inter_dataset_eval = AutoencoderEvaluation(model,x_test,y_test,res_dir=f"study/inter_dataset/{folder_name}")
                 inter_dataset_eval.calculate_ae_outputs() 
                 inter_dataset_eval.evaluate_bayesian_inference()
-                inter_dataset_eval.evaluate_auroc()
+                inter_dataset_eval.evaluate_auroc(inter_dataset=True)
+
+
 
             ctx['best']=res
             ae.save(os.path.join(_st['dir'],_st['best_model']),'w')

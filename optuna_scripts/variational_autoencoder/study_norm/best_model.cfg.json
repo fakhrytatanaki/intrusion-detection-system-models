@@ -1,0 +1,1 @@
+{"epochs": 20, "sub_sample": {"enable": false, "size": 0}, "data_config": {"feature_scaling": "Normalisation"}, "reconstruction_error_func": "Euclidean Distance", "latent_vec_size": 65, "data_vec_size": 68}
